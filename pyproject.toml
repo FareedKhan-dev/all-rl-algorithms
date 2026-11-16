@@ -1,6 +1,6 @@
 [project]
 name = "all-rl-algorithms"
-version = "0.1.0"
+version = "1.0.0"
 description = "Reinforcement learning algorithms implemented from scratch in NumPy and PyTorch, one notebook each, from Q-learning to PlaNet."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -5,7 +5,7 @@
 ![made-with-Python](https://img.shields.io/badge/Made%20with-Python-blue)
 ![made-with-Jupyter](https://img.shields.io/badge/Made%20with-Jupyter-orange)
 ![Educational](https://img.shields.io/badge/Purpose-Educational-green)
-![RL Algorithms](https://img.shields.io/badge/RL%20Algorithms-18-brightgreen)
+![RL Algorithms](https://img.shields.io/badge/RL%20Algorithms-19-brightgreen)
 ![Language](https://img.shields.io/github/languages/top/fareedkhan-dev/all-rl-algorithms)
 ![Maintained](https://img.shields.io/maintenance/yes/2026)
 ![Last Commit](https://img.shields.io/github/last-commit/fareedkhan-dev/all-rl-algorithms)
@@ -28,6 +28,7 @@ This repository also includes a [comprehensive cheat sheet](cheatsheet.md) summa
 
 | Date | Update |
 |------|--------|
+| **16 November 2026** | **Version 1.0.0.** Every notebook re-run from the top after fixing bugs that changed what they teach: terminal states and the Cliff Walking rules in Q-learning, GAE and critic targets in PPO, A2C and TRPO, gradient accumulation in A3C, the MCTS backup, HAC's lost low-level experience, and more. New notebook 19 on bandits for dynamic pricing, plus tests and CI. See the [changelog](CHANGELOG.md). |
 | **2 April 2025** | Added a comprehensive [RL Cheat Sheet](cheatsheet.md) summarizing all implemented algorithms and core concepts. Repository now includes **18 algorithm notebooks**. |
 | **30 March 2025** | Added **18 new algorithms**. |
 
@@ -60,15 +61,16 @@ The repository currently includes implementations of the following RL algorithms
 | 07 | **Proximal Policy Optimization (PPO)** | Actor-Critic | State-of-the-art, stabilizes policy updates via clipped surrogate objective. Balances exploration and exploitation efficiently. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](07_ppo.ipynb) |
 | 08 | **Advantage Actor-Critic (A2C)** | Actor-Critic | Uses a critic to estimate advantages, reducing variance compared to REINFORCE. Synchronous updates. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](08_a2c.ipynb) |
 | 09 | **Asynchronous Advantage Actor-Critic (A3C)** | Actor-Critic | An asynchronous version of A2C, using multiple workers to collect data and update the global network. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](09_a3c.ipynb) |
-| 10 | **Deep Deterministic Policy Gradient (DDPG)** | Actor-Critic | Uses a separate action function to estimate Q-values, allowing operation in continuous action spaces. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](10_ddpg.ipynb) |
+| 10 | **Deep Deterministic Policy Gradient (DDPG)** | Actor-Critic | Learns a deterministic policy (the actor) together with a Q-function (the critic), for continuous action spaces. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](10_ddpg.ipynb) |
 | 11 | **Soft Actor-Critic (SAC)** | Actor-Critic | Off-policy actor-critic for continuous action spaces, based on maximum entropy RL. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](11_sac.ipynb) |
 | 12 | **Trust Region Policy Optimization (TRPO)** | On-Policy | Imposes a limit on how much the policy distribution can change in a single step. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](12_trpo.ipynb) |
 | 13 | **Deep Q-Network (DQN)** | Value-Based | Combines Q-learning with deep neural networks to handle high-dimensional state spaces. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](13_dqn.ipynb) |
-| 14 | **Multi-Agent DDPG (MADDPG)** | Actor-Critic | Extends DDPG to multi-agent settings, addressing non-stationarity problems. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](14_maddpg.ipynb) |
-| 15 | **QMIX** | On-Policy Actor-Critic | Value-based MARL algorithm for cooperative tasks with value function factorization. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](15_qmix.ipynb) |
-| 16 | **Hierarchical Actor-Critic (HAC)** | Hierarchical | Decomposes long, complex tasks into manageable sub-problems. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](16_hac.ipynb) |
+| 14 | **Multi-Agent DDPG (MADDPG)** | Actor-Critic | Extends DDPG to multi-agent settings with a centralized critic per agent, addressing non-stationarity (here with discrete actions). | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](14_maddpg.ipynb) |
+| 15 | **QMIX** | Value-Based (MARL) | Cooperative multi-agent Q-learning: per-agent Q-values combined by a monotonic mixing network. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](15_qmix.ipynb) |
+| 16 | **Hierarchical Actor-Critic (HAC)** | Hierarchical | A high level sets subgoals for a low level, and both learn at once thanks to hindsight. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](16_hac.ipynb) |
 | 17 | **Monte Carlo Tree Search (MCTS)** | Planning | Best-first search algorithm guided by Monte Carlo rollouts. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](17_mcts.ipynb) |
-| 18 | **PlaNet (Deep Planning Network)** | Planning | Model-based RL agent that learns a world model to plan future actions. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](18_planet.ipynb) |
+| 18 | **PlaNet (Deep Planning Network)** | Planning | Model-based RL: learns a model of the environment and plans with it (simplified here to an MLP model of the state and CEM planning). | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](18_planet.ipynb) |
+| 19 | **Multi-Armed Bandits for Dynamic Pricing** | Bandit | Learns which price earns the most from sales alone, comparing ε-greedy, UCB1 and Thompson Sampling by revenue and regret. | [![Open Notebook](https://img.shields.io/badge/Open-Notebook-blue)](19_bandits_dynamic_pricing.ipynb) |
 
 
 Each algorithm has its own Jupyter Notebook (`.ipynb`) file with a detailed explanation and implementation.
@@ -136,9 +138,9 @@ Each notebook includes visualizations to help you understand the agent's behavio
 -   **Policy Grids:** Arrows showing the learned policy (action choice) in each state.
 -   **More Advanced Visualizations:** Visualizations may depend on each particular algorithm.
 
-## ⚠️ Disclaimer: Bugs and Incomplete Implementations
+## ⚠️ Disclaimer: Simplifications
 
-This repository is primarily for learning! While effort has been taken, some notebooks (especially the more complex ones like HAC) may contain bugs, incomplete implementations, or simplifications for clarity. If you find any issues, feel free to create a pull request.
+This repository is for learning. Several notebooks simplify the published algorithms to keep them readable (PlaNet, HAC and MADDPG among them), and each one says where. The outputs and the analysis next to them come from running each notebook from the top on its current code. If you find a bug, please open an issue or a pull request.
 
 
 ## 🤝 Contributing
@@ -152,6 +154,8 @@ Contributions are welcome! Here's how you can help:
 - 🌍 **Add More Environment Examples:** Implement known RL tasks.
 - 📐 **Follow Guidelines:** Please follow the project's coding style and documentation guidelines.  
 - 📝 **Open Discussions:** Create a new issue to discuss your contribution before starting work.
+
+If you change a notebook, re-run it from the top (Restart Kernel and Run All) and commit it with its outputs, so the outputs always match the code. Then run the tests with `uv run pytest`: they check that every notebook ran in order without errors and that the algorithms behave as expected on small cases worked out by hand. CI runs the same tests on every pull request.
 
 
 ## Contributor Wall of Fame
