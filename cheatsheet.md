@@ -38,6 +38,8 @@ To avoid the need to constantly refer to the original notebooks, here is a cheat
 - [8. Planning \& Model-Based Methods](#8-planning--model-based-methods)
   - [8.1 Monte Carlo Tree Search (MCTS)](#81-monte-carlo-tree-search-mcts)
   - [8.2 PlaNet (Deep Planning Network)](#82-planet-deep-planning-network)
+- [9. Bandits](#9-bandits)
+  - [9.1 Multi-Armed Bandits for Dynamic Pricing](#91-multi-armed-bandits-for-dynamic-pricing)
 - [Key Insights \& Takeaways](#key-insights--takeaways)
 
 ---
@@ -95,7 +97,7 @@ Q^*(s, a) = \sum_{s', r} P(s', r | s, a) \left[r + \gamma \max_{a'} Q^*(s', a')\
 ## 2. Basic / Tabular Methods
 
 ### 2.1 Simple Exploration Bot
-([1_simple_rl.ipynb](1_simple_rl.ipynb))
+([01_simple_rl.ipynb](01_simple_rl.ipynb))
 -   **Core Idea:** Demonstrates the basic agent-environment loop. Agent remembers immediate rewards for state-action pairs and uses a simple epsilon-greedy policy based on average *immediate* rewards. **Does not perform true RL value learning.**
 -   **Mathematical Formulation:** No Bellman updates. Policy based on:
 ```math
@@ -128,7 +130,7 @@ Q^*(s, a) = \sum_{s', r} P(s', r | s, a) \left[r + \gamma \max_{a'} Q^*(s', a')\
 -   **Use Cases:** Educational demonstration of basic agent structure.
 
 ### 2.2 Q-Learning
-([2_q_learning.ipynb](2_q_learning.ipynb))
+([02_q_learning.ipynb](02_q_learning.ipynb))
 -   **Core Idea:** Learns the optimal action-value function ($Q^*$) **off-policy** using Temporal Difference (TD) updates.
 -   **Mathematical Formulation:** Bellman Optimality update:
 
@@ -138,7 +140,7 @@ Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha [r_t + \gamma \max_{a'} Q(s_{t+1}, a
 
 - $\alpha$: Learning rate
 - $\gamma$: Discount factor
-- $\max_{a'} Q(s_{t+1}, a')$: Max Q-value in next state (greedy estimate of future value)
+- $\max_{a'} Q(s_{t+1}, a')$: Max Q-value in next state (greedy estimate of future value), 0 when $s_{t+1}$ is terminal
 
 -   **Pseudocode:**
     1. Initialize Q-table `Q(s, a)` to zeros.
@@ -151,9 +153,9 @@ Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha [r_t + \gamma \max_{a'} Q(s_{t+1}, a
          - `s = s'`
 -   **Code Snippet:**
     ```python
-    # Q-Learning update
+    # Q-Learning update (a terminal next state has no future value)
     current_q = q_table[state][action]
-    max_next_q = max(q_table[next_state].values()) if next_state in q_table else 0.0
+    max_next_q = 0.0 if done else max(q_table[next_state].values())
     td_target = reward + gamma * max_next_q
     td_error = td_target - current_q
     q_table[state][action] += alpha * td_error
@@ -165,7 +167,7 @@ Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha [r_t + \gamma \max_{a'} Q(s_{t+1}, a
 -   **Use Cases:** Small, discrete state/action spaces, foundational understanding.
 
 ### 2.3 SARSA
-([3_sarsa.ipynb](3_sarsa.ipynb))
+([03_sarsa.ipynb](03_sarsa.ipynb))
 -   **Core Idea:** Learns the action-value function ($Q^\pi$) for the policy currently being followed (**on-policy**) using TD updates.
 -   **Mathematical Formulation:** Update uses the *next action* chosen by the policy:
 
@@ -189,7 +191,7 @@ Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha [r_t + \gamma Q(s_{t+1}, a_{t+1}) - 
     ```python
     # SARSA update
     current_q = q_table[state][action]
-    next_q = q_table[next_state][next_action] # Q-value of the *next* action taken
+    next_q = 0.0 if done else q_table[next_state][next_action] # Q-value of the *next* action taken
     td_target = reward + gamma * next_q
     td_error = td_target - current_q
     q_table[state][action] += alpha * td_error
@@ -202,7 +204,7 @@ Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha [r_t + \gamma Q(s_{t+1}, a_{t+1}) - 
 -   **Use Cases:** When evaluating the current policy is important, safer exploration needed.
 
 ### 2.4 Expected SARSA
-([4_expected_sarsa.ipynb](4_expected_sarsa.ipynb))
+([04_expected_sarsa.ipynb](04_expected_sarsa.ipynb))
 -   **Core Idea:** Like SARSA, but updates using the *expected* value over next actions, weighted by policy probabilities, reducing variance. Still **on-policy**.
 -   **Mathematical Formulation:**
 
@@ -235,7 +237,7 @@ For $\epsilon$-greedy:
     ```python
     # Expected SARSA update (assuming epsilon-greedy)
     current_q = q_table[state][action]
-    if next_state in q_table and q_table[next_state]:
+    if not done: # A terminal next state has no future value
         q_values_next = q_table[next_state]
         max_q_next = max(q_values_next.values())
         num_actions = len(action_space)
@@ -253,7 +255,7 @@ For $\epsilon$-greedy:
 -   **Use Cases:** Where SARSA is applicable but stability/variance is an issue.
 
 ### 2.5 Dyna-Q
-([5_dyna_q.ipynb](5_dyna_q.ipynb))
+([05_dyna_q.ipynb](05_dyna_q.ipynb))
 -   **Core Idea:** Integrates **model-free learning (Q-learning)** with **model-based planning**. Learns a model of the environment from real experience and uses it to perform extra "planning" updates on the Q-table using simulated experience.
 -   **Mathematical Formulation:**
     -   **Direct RL:** Standard Q-learning update on real transition $(s, a, r, s')$.
@@ -303,7 +305,7 @@ For $\epsilon$-greedy:
 ## 3. Policy Gradient Methods
 
 ### 3.1 REINFORCE (Monte Carlo Policy Gradient)
-([6_reinforce.ipynb](6_reinforce.ipynb))
+([06_reinforce.ipynb](06_reinforce.ipynb))
 -   **Core Idea:** Directly learns a parameterized policy $\pi(a|s; \theta)$ by increasing the probability of actions that led to high *cumulative* episode returns ($G_t$). **On-policy**, **Monte Carlo**.
 -   **Mathematical Formulation:** Updates policy parameters $\theta$ via gradient ascent on $J(\theta) = \mathbb{E}[G_t]$.
     $$\nabla_\theta J(\theta) \approx \sum_{t=0}^{T-1} G_t \nabla_\theta \log \pi(a_t | s_t; \theta) $$
@@ -390,7 +392,7 @@ Solved using Conjugate Gradient (to find direction $\approx F^{-1}g$) and Line S
 ## 4. Actor-Critic Methods
 
 ### 4.1 Advantage Actor-Critic (A2C)
-([8_a2c.ipynb](8_a2c.ipynb))
+([08_a2c.ipynb](08_a2c.ipynb))
 -   **Core Idea:** A **synchronous**, simpler version of A3C. Uses an actor (policy) and a critic (value function) trained on batches of experience collected by the actor. Reduces variance compared to REINFORCE by using advantage estimates. **On-policy**.
 -   **Mathematical Formulation:**
     -   Actor Loss (minimize): $L_{actor} = - \mathbb{E}_t [ \log \pi(a_t | s_t; \theta) \hat{A}_t^{\text{detached}} + c_e H(\pi) ]$
@@ -438,7 +440,7 @@ Solved using Conjugate Gradient (to find direction $\approx F^{-1}g$) and Line S
 -   **Use Cases:** Discrete/continuous control benchmarks, simpler alternative to A3C/PPO.
 
 ### 4.2 Asynchronous Advantage Actor-Critic (A3C)
-([9_a3c.ipynb](9_a3c.ipynb) & [a3c_training.py](a3c_training.py))
+([09_a3c.ipynb](09_a3c.ipynb) & [a3c_training.py](a3c_training.py))
 -   **Core Idea:** Uses multiple parallel workers, each with a local copy of the actor-critic network and an environment instance. Workers compute gradients locally based on n-step returns and asynchronously update a shared global network. **On-policy**.
 -   **Mathematical Formulation:** Same loss function as A2C (per worker), but updates are applied asynchronously to global parameters $\theta_{global}, \phi_{global}$ using gradients computed from local parameters $\theta', \phi'$.
 -   **Pseudocode (Worker):**
@@ -462,6 +464,7 @@ Solved using Conjugate Gradient (to find direction $\approx F^{-1}g$) and Line S
     total_loss = policy_loss + value_loss_coeff * value_loss
     
     global_optimizer.zero_grad()
+    local_model.zero_grad() # backward() adds to .grad, and the local model is reused for every rollout
     total_loss.backward() # Calculates grad on local model
     # Transfer gradients to global model
     for local_param, global_param in zip(local_model.parameters(), global_model.parameters()):
@@ -497,6 +500,8 @@ Solved using Conjugate Gradient (to find direction $\approx F^{-1}g$) and Line S
 
     ```python
     # Critic Update
+    # done_batch marks terminal states only. An episode cut by a time limit (gymnasium's
+    # `truncated`) still has a future, so it is stored as not done and bootstraps.
     with torch.no_grad():
         next_actions = target_actor(next_state_batch)
         target_q = target_critic(next_state_batch, next_actions)
@@ -547,6 +552,8 @@ Solved using Conjugate Gradient (to find direction $\approx F^{-1}g$) and Line S
 
     ```python
     # Critic Target Calculation
+    # done_batch marks terminal states only. An episode cut by a time limit (gymnasium's
+    # `truncated`) still has a future, so it is stored as not done and bootstraps.
     with torch.no_grad():
         next_action, next_log_prob = actor(next_state_batch)
         q1_target_next, q2_target_next = target_critic(next_state_batch, next_action)
@@ -577,7 +584,7 @@ Solved using Conjugate Gradient (to find direction $\approx F^{-1}g$) and Line S
 -   **Use Cases:** Continuous control (robotics, benchmarks), situations needing robust exploration.
 
 ### 4.5 Proximal Policy Optimization (PPO)
-([7_ppo.ipynb](7_ppo.ipynb))
+([07_ppo.ipynb](07_ppo.ipynb))
 -   **Core Idea:** An **on-policy** actor-critic method that simplifies TRPO's constrained update using a **clipped surrogate objective**. Allows multiple epochs of updates on collected data for better sample efficiency.
 -   **Mathematical Formulation:**
     -   Ratio: $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$
@@ -613,7 +620,8 @@ Solved using Conjugate Gradient (to find direction $\approx F^{-1}g$) and Line S
     surr2 = torch.clamp(ratio, 1.0 - ppo_clip_epsilon, 1.0 + ppo_clip_epsilon) * advantages
     policy_loss = -torch.min(surr1, surr2).mean() - entropy_coeff * entropy
     
-    # Calculate value loss
+    # Calculate value loss. returns_to_go = raw GAE + V(s): standardize only the advantages
+    # the policy sees, never the critic's target.
     value_loss = F.mse_loss(values_pred, returns_to_go)
     
     # Update networks (typically combined loss or separate updates)
@@ -692,7 +700,7 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
 -   **Mathematical Formulation:**
     -   Centralized Critic $Q_i(x, a_1, ..., a_N; \phi_i)$ for agent $i$. $x = (o_1, ..., o_N)$.
     -   Critic Update: Minimize $L(\phi_i) = \mathbb{E} [ (y_i - Q_i(x, \mathbf{a}))^2 ]$ where $y_i = r_i + \gamma Q'_i(x', \mu'_1(o'_1), ..., \mu'_N(o'_N))$.
-    -   Actor Update: Minimize $L(\theta_i) = - \mathbb{E} [ Q_i(x, \mu_1(o_1), ..., \mu_N(o_N)) ]$ (using main critic $Q_i$).
+    -   Actor Update: Minimize $L(\theta_i) = - \mathbb{E}_{x, \mathbf{a} \sim \mathcal{D}} [ Q_i(x, a_1, ..., \mu_i(o_i), ..., a_N) ]$ (using main critic $Q_i$; the other agents' actions $a_j$ come from the buffer). The notebook's actions are discrete, so it takes the exact expectation over agent $i$'s actions instead: $\sum_a \pi_i(a|o_i) Q_i(x, a, a_{-i})$.
 -   **Pseudocode:**
     1. Initialize actors $\mu_i$, critics $Q_i$, targets $\mu'_i, Q'_i$, replay buffer $\mathcal{D}$.
     2. For each step:
@@ -713,12 +721,11 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
     critic_loss_i = F.mse_loss(current_q_i, y_i)
     # ... optimize critic i ...
     
-    # Actor Update (Agent i)
-    current_actions_policy = [actors[j](obs_batch[:, j]) for j in range(num_agents)]
-    # Need grads only for actor i's action output
-    current_actions_policy[i] = actors[i](obs_batch[:, i]) # Ensure grad enabled if needed
-    q_actor_loss = critics[i](joint_obs_batch, torch.cat(current_actions_policy, dim=1))
-    actor_loss_i = -q_actor_loss.mean()
+    # Actor Update (Agent i): the other agents' actions come from the replay buffer, as in the
+    # paper; only agent i's action is recomputed by its actor, so only it carries a gradient
+    actions = list(actions_batch.unbind(dim=1)) # Per-agent actions from the buffer
+    actions[i] = actors[i](obs_batch[:, i])
+    actor_loss_i = -critics[i](joint_obs_batch, torch.cat(actions, dim=1)).mean()
     # ... optimize actor i ...
     ```
 
@@ -769,7 +776,7 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
     ```
 
 -   **Key Hyperparameters:** Like DQN, plus mixing network architecture, hypernetwork details.
--   **Pros:** Good for cooperative tasks, enforces IQL principle (local optimum -> global optimum), scales better in action space than joint Q-learning.
+-   **Pros:** Good for cooperative tasks, satisfies the IGM principle (Individual-Global-Max: the agents' individually greedy actions form the greedy joint action), scales better in action space than joint Q-learning.
 -   **Cons:** Limited representational power due to monotonicity, requires global state for mixer.
 -   **Use Cases:** Cooperative MARL (e.g., SMAC benchmark), resource allocation.
 
@@ -798,11 +805,12 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
            - Take `a`, get `r_env`, `s_next`, `env_done`.
            - `total_env_reward += r_env`
            - `r_int = get_intrinsic_reward(s_next, g_0)`
-           - Store low-level tuple `(s, a, r_int, s_next, g_0, env_done or test_goal(s_next,g_0), achieved_goal=s_next)` in `transitions`.
+           - Store low-level tuple `(s, a, r_int, s_next, g_0, env_done or test_goal(s_next,g_0))` in `transitions`.
            - `s = s_next`
            - If `test_goal(s, g_0)` or `env_done`: break inner loop.
          - `s_end = s`
-         - Store high-level tuple `(s_start, g_0, total_env_reward, s_end, G, env_done)` in `transitions`.
+         - Store high-level tuple `(s_start, s_end, total_env_reward, s_end, G, env_done)` in `transitions`, with the state actually reached `s_end` as the action (hindsight action).
+         - Give each low-level transition the states reached later in the same attempt, for hindsight goals.
          - Add `transitions` to buffers with hindsight relabeling.
          - Update $Q_0, Q_1$ from buffers. Update targets.
          - If `env_done`: break outer loop.
@@ -816,16 +824,18 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
     if subgoal_achieved:
         intrinsic_reward = 0.0 # Success reward
         
-    # Store original transition
-    buffer.push(..., reward=intrinsic_reward, goal=goal_norm, done=env_done or subgoal_achieved, achieved_goal=next_state_norm, level=0)
+    # Store original transition; once the attempt is over, it gets future_goals, the states
+    # the attempt reached from this step on
+    buffer.push(..., reward=intrinsic_reward, goal=goal_norm, done=env_done or subgoal_achieved,
+                future_goals=later_states, env_done=env_done, level=0)
     
-    # Hindsight is handled in buffer.sample() by replacing goal with achieved_goal
-    # and setting reward/done accordingly for the hindsight sample.
+    # Hindsight goals are applied in buffer.sample(): with probability k / (k + 1) the goal is
+    # replaced by one of future_goals and the reward and done flag are recomputed for it
     ```
 
 -   **Key Hyperparameters:** Number of levels, time limit `H`, learning rates, `gamma`, `tau`, `epsilon` schedule, buffer sizes, hindsight probability `p`.
 -   **Pros:** Can solve long-horizon/sparse reward tasks, structured exploration, potential for skill reuse.
--   **Cons:** Very complex implementation, sensitive to goal definition, time limits, and hyperparameters, potential for suboptimal subgoal setting. **The notebook implementation has known issues.**
+-   **Cons:** Very complex implementation, sensitive to goal definition, time limits, and hyperparameters, potential for suboptimal subgoal setting. The notebook simplifies the paper: two levels, discrete subgoals, Q-learning instead of DDPG, and no subgoal-testing transitions.
 -   **Common Pitfalls:** Hindsight logic, intrinsic reward definition, goal feasibility, tuning `H`.
 -   **Use Cases:** Complex robotics tasks, long-horizon planning, navigation.
 
@@ -847,7 +857,7 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
        - **Selection:** While `node` is fully expanded and not terminal, `node = select_best_child_uct(node)`.
        - **Expansion:** If `node` not fully expanded and not terminal, expand one child `node = expand_node(node)`.
        - **Simulation:** Run rollout from `node`'s state using default policy, get reward `R`.
-       - **Backpropagation:** Update `N` and `W` for nodes/edges from `node` back up to root using `R`.
+       - **Backpropagation:** Update `N` and `W` for nodes/edges from `node` back up to root using `R`. With a reward on every move (as in the notebook's grid), each level up adds the reward of the move into the node and discounts the rest: $G \leftarrow r + \gamma G$, then $W \leftarrow W + G$.
     3. Choose best action from root based on visit counts (or values).
 -   **Code Snippet:** (UCT Selection)
 
@@ -900,6 +910,7 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
     # Train model...
     ```
 
+-   **The notebook's version:** an MLP that predicts Pendulum's next state vector and reward, trained on single steps, with CEM planning on top. There is no latent RSSM and no image encoder.
 -   **Key Hyperparameters:** Model architecture (latent size, hidden dims), model learning rate, buffer size, sequence length, planning horizon `H`, CEM parameters (`J`, `M`, iterations).
 -   **Pros:** Very sample efficient (especially from images), learns compact world representation, effective planning.
 -   **Cons:** Complex model training, planning can be computationally expensive, model inaccuracies can lead to poor plans (compounding errors).
@@ -908,9 +919,40 @@ y = r + \gamma (1-d) \max_{a'} Q'(s', a'; \theta^{-})
 
 ---
 
+## 9. Bandits
+
+### 9.1 Multi-Armed Bandits for Dynamic Pricing
+([19_bandits_dynamic_pricing.ipynb](19_bandits_dynamic_pricing.ipynb))
+-   **Core Idea:** RL with a single state. Each price is an arm, each visitor is one pull, and the reward is the revenue of that sale. The agent has to keep testing prices it is unsure about while charging the one that looks best, which is the exploration-exploitation trade-off with nothing else around it.
+-   **Mathematical Formulation:** Regret after $T$ visitors, against always charging the best price:
+
+```math
+\text{Regret}(T) = T \mu^* - \sum_{t=1}^{T} \mu_{a_t}, \qquad \mu_a = p_a \, P(\text{buy} \mid p_a)
+```
+
+-   **UCB1:** charge $\arg\max_a \left[ \hat{\mu}_a + c \sqrt{2 \ln t / n_a} \right]$, with $c$ the largest possible reward (the highest price).
+-   **Thompson Sampling:** keep a $\text{Beta}(\alpha_a, \beta_a)$ belief about each price's purchase probability, draw $\theta_a$ from each, charge $\arg\max_a p_a \theta_a$, and add the sale or no-sale to that price's belief.
+-   **Code Snippet:**
+
+    ```python
+    # Thompson Sampling for pricing
+    theta = rng.beta(alpha, beta)          # one guess of every purchase probability
+    arm = int(np.argmax(prices * theta))   # the price with the best guessed revenue
+    bought, revenue = env.visit(arm)       # one visitor: did they buy at that price?
+    alpha[arm] += bought                   # update the belief about that price only
+    beta[arm] += 1 - bought
+    ```
+
+-   **Key Hyperparameters:** $\epsilon$ for $\epsilon$-greedy, $c$ for UCB1, the prior for Thompson Sampling.
+-   **Pros:** Simple, sample-efficient, and well understood (regret bounds).
+-   **Cons:** No state: today's price does not change tomorrow's situation. Pricing with inventory or a selling season needs a full MDP.
+-   **Use Cases:** Price and offer testing, ad and recommendation selection, A/B tests that adapt while they run.
+
+---
+
 ## Key Insights & Takeaways
 
-> **Pro Tip**: Standardizing advantages (in policy gradient/actor-critic methods) or returns (in REINFORCE) often significantly stabilizes training. This involves subtracting the mean and dividing by the standard deviation within each batch or episode.
+> **Pro Tip**: Standardizing advantages (in policy gradient/actor-critic methods) or returns (in REINFORCE) often significantly stabilizes training. This involves subtracting the mean and dividing by the standard deviation within each batch or episode. Standardize only the copy the policy sees: a critic trained on standardized targets learns a quantity with no meaning.
 
 > **Algorithm Combinations**: Many state-of-the-art algorithms combine multiple ideas. PPO and A2C use actor-critic with policy gradients. SAC combines actor-critic with maximum entropy RL. PlaNet integrates model-based learning with CEM planning.
 
