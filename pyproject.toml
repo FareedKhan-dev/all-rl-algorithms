@@ -1,12 +1,23 @@
 [project]
 name = "all-rl-algorithms"
 version = "0.1.0"
-description = "Add your description here"
+description = "Reinforcement learning algorithms implemented from scratch in NumPy and PyTorch, one notebook each, from Q-learning to PlaNet."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = [
-    "gymnasium>=1.2.0",
-    "matplotlib>=3.10.5",
-    "numpy>=2.3.2",
-    "torch>=2.8.0",
+    "gymnasium>=1.0",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
+    "torch>=2.3",
 ]
+
+[dependency-groups]
+# `uv sync` installs this group too: Jupyter to run the notebooks, pytest for the checks.
+dev = [
+    "ipykernel>=6.29",
+    "jupyter>=1.1",
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

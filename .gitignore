@@ -1,8 +1,9 @@
 # Environment variables
 *.env
 
-# Python virtual environment
+# Python virtual environment (uv creates .venv/)
 venv/
+.venv/
 
 # Binary files
 *.bin

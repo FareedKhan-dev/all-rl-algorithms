@@ -7,7 +7,7 @@
 ![Educational](https://img.shields.io/badge/Purpose-Educational-green)
 ![RL Algorithms](https://img.shields.io/badge/RL%20Algorithms-18-brightgreen)
 ![Language](https://img.shields.io/github/languages/top/fareedkhan-dev/all-rl-algorithms)
-![Maintained](https://img.shields.io/maintenance/yes/2025)
+![Maintained](https://img.shields.io/maintenance/yes/2026)
 ![Last Commit](https://img.shields.io/github/last-commit/fareedkhan-dev/all-rl-algorithms)
 ![Size](https://img.shields.io/github/repo-size/fareedkhan-dev/all-rl-algorithms)
 [![contributions welcome](https://img.shields.io/static/v1.svg?label=Contributions&message=Welcome&color=0059b3&style=flat-square)](https://github.com/fareedkhan-dev/all-rl-algorithms)
@@ -85,48 +85,34 @@ Complementing the detailed notebooks, a comprehensive **[RL Cheat Sheet](cheatsh
 
 >➡️ **[View the RL Cheat Sheet here](cheatsheet.md)**
 
-## 🛠️ Installation and Setup  
+## 🛠️ Installation and Setup
 
-Follow these steps to get started:  
-
-1. **Clone the repository:**  
+1. **Clone the repository:**
 
    ```bash
    git clone https://github.com/fareedkhan-dev/all-rl-algorithms.git
    cd all-rl-algorithms
    ```
 
-2.  **Create a virtual environment (using uv):**
-(⚡ faster alternative to python -m venv)
+2. **Install the dependencies** with [uv](https://docs.astral.sh/uv/), which reads `pyproject.toml` and `uv.lock` and creates `.venv/` for you:
 
-    ```bash
-    # Initialize a new project (⭐ only if starting fresh, not when cloning)
-    uv init  
+   ```bash
+   uv sync
+   ```
 
-    # Create a virtual environment
-    uv venv  
-    ```
-3. **Activate the virtual environment:**
-   
-    ```bash
-    # Windows
-    .venv\Scripts\activate  
+   Or with pip, in a virtual environment of your own (Python 3.10 or newer):
 
-    # macOS / Linux
-    source .venv/bin/activate
-    ```
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate        # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt jupyter
+   ```
 
-4.  **Install dependencies:**
+3. **Start Jupyter** and open any notebook: `uv run jupyter lab`, or `jupyter lab` with pip.
 
-    ```bash
-    uv add -r requirements.txt
-    ```
-5.  **Multiprocessing in A3C:** Please run `a3c_training.py` in the terminal instead of the jupyter notebook to avoid any complication from multiprocessing.
+4. **A3C:** run the script version from a terminal, `uv run python a3c_training.py`, because multiprocessing does not work reliably inside a notebook.
 
-> 💡 Note: If you don’t have uv installed yet, you can install it via:
-```bash
-pip install uv
-```
+> 💡 No uv yet? See the [installation guide](https://docs.astral.sh/uv/getting-started/installation/), or `pip install uv`.
 
 ## 🧑‍🏫 How to Use This Repo: A Learning Guide
 

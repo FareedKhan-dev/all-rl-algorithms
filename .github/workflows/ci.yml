@@ -1,0 +1,31 @@
+name: CI
+
+# Checks what a reader gets: every notebook parses, ran top to bottom on its current code,
+# shows no error, and imports only declared dependencies; the A3C script compiles.
+# CI does not re-train the notebooks; see Contributing in the README.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notebooks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install pytest
+      - run: python -m py_compile a3c_training.py
+      - run: pytest -q
+
