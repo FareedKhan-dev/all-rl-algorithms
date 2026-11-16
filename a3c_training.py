@@ -272,8 +272,6 @@ def worker(worker_id: int,
             dones_list: List[float] = []
             entropies_list: List[torch.Tensor] = [] # Store tensors with grad_fn
 
-            episode_done_flag = False # Track if episode finished within this rollout
-
             # --- Rollout Phase (collect n steps or until episode ends) ---
             for step_idx in range(n_steps):
                 # Ensure state tensor is on the correct device (CPU)
@@ -299,12 +297,13 @@ def worker(worker_id: int,
                 episode_reward += reward
                 episode_length += 1
 
-                # Update state
+                # Update state. Keep the state the rollout stopped in for the bootstrap below:
+                # when the episode ends, `state` is replaced by the reset state of the next one.
                 state = next_state
+                rollout_end_state = next_state
 
-                # Check for termination conditions
+                # Check for termination conditions (a terminal state, or the step limit)
                 episode_done = done or (episode_length >= max_episode_steps)
-                episode_done_flag = episode_done # Store if episode finished in this loop
 
                 # Increment global step counter safely
                 current_global_step = 0 # Initialize
@@ -334,13 +333,14 @@ def worker(worker_id: int,
             if not rewards_list: # Skip if rollout was empty
                 continue
 
-            # Calculate bootstrap value V(s_{t+n})
+            # Calculate bootstrap value V(s_{t+n}): 0 after a terminal state, otherwise the critic's
+            # estimate for the state the rollout stopped in. That includes an episode cut by the
+            # step limit: it did not reach a terminal state, so its value is not 0.
             R = torch.tensor([0.0], dtype=torch.float32, device=worker_device)
-            if not episode_done_flag and not stop_event.is_set(): # If the episode did *not* end and not stopping
-                # Use the local model to estimate value of the *next* state
+            if not dones_list[-1]:
                 # Use torch.no_grad() here, as this is a target value
                 with torch.no_grad():
-                    _, R = local_model(state.to(worker_device)) # state is the state after the loop
+                    _, R = local_model(rollout_end_state.to(worker_device))
 
             # Compute n-step returns and advantages (function expects detached bootstrap value R)
             # values_list contains tensors with grad_fn, compute_n_step will detach them internally for advantage calc
@@ -395,8 +395,11 @@ def worker(worker_id: int,
             # Ensure model is in training mode for backward pass
             local_model.train()
 
-            # Zero gradients of the *global* optimizer/model before local calculation
+            # Zero the gradients of both models. backward() adds to .grad and the local model is
+            # reused for every rollout, so without this each update would also carry the
+            # gradients of all earlier rollouts.
             global_optimizer.zero_grad()
+            local_model.zero_grad()
 
             # Calculate gradients for the local model based on the total loss
             total_loss.backward()
@@ -444,13 +447,15 @@ if __name__ == "__main__":
     # --- Hyperparameter Setup ---
     GAMMA_A3C = 0.99             # Discount factor
     LR_A3C = 1e-4                # Learning rate
-    N_STEPS = 5                  # Steps per update (n-step rollout length)
+    N_STEPS = 20                 # Steps per update (n-step rollout length). The goal is 18 moves
+                                 # from the start; with 5-step returns its +10 barely reaches the
+                                 # early states, and the agent settles for staying off the walls
     VALUE_LOSS_COEFF_A3C = 0.5   # Coefficient for value loss term
     ENTROPY_COEFF_A3C = 0.01     # Coefficient for entropy bonus term
 
     NUM_WORKERS = mp.cpu_count() # Use number of available CPU cores
     # NUM_WORKERS = 4 # Or set manually
-    MAX_GLOBAL_STEPS_A3C = 50000  # Total training steps across all workers
+    MAX_GLOBAL_STEPS_A3C = 100000 # Total training steps across all workers
     MAX_STEPS_PER_EPISODE_A3C = 200 # Max steps per episode before reset (timeout)
 
     ENV_ROWS = 10
@@ -642,5 +647,22 @@ if __name__ == "__main__":
         # plt.show() # Uncomment to display plot directly
     else:
         print("\nNo episode data collected, skipping plotting.")
+
+    # --- Summary and a greedy test of the trained global model ---
+    if a3c_episode_rewards:
+        last = min(50, len(a3c_episode_rewards))
+        print(f"Average over the last {last} episodes: reward {np.mean(a3c_episode_rewards[-last:]):.2f}, "
+              f"length {np.mean(a3c_episode_lengths[-last:]):.1f} steps")
+    test_env = GridEnvironment(rows=ENV_ROWS, cols=ENV_COLS)
+    state, test_reward, reached_goal = test_env.reset(), 0.0, False
+    for test_step in range(1, MAX_STEPS_PER_EPISODE_A3C + 1):
+        with torch.no_grad():
+            action_dist, _ = global_model_a3c(state)
+        state, reward, reached_goal = test_env.step(int(action_dist.probs.argmax()))
+        test_reward += reward
+        if reached_goal:
+            break
+    print(f"Greedy policy from the start: {'reached the goal' if reached_goal else 'did not reach the goal'} "
+          f"after {test_step} steps, reward {test_reward:.2f}")
 
     print("Script finished.")
