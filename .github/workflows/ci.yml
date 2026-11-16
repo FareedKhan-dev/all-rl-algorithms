@@ -1,7 +1,8 @@
 name: CI
 
 # Checks what a reader gets: every notebook parses, ran top to bottom on its current code,
-# shows no error, and imports only declared dependencies; the A3C script compiles.
+# shows no error, and imports only declared dependencies; the A3C script compiles. The
+# algorithms job runs the notebooks' own functions on small cases worked out by hand.
 # CI does not re-train the notebooks; see Contributing in the README.
 
 on:
@@ -29,3 +30,13 @@ jobs:
       - run: python -m py_compile a3c_training.py
       - run: pytest -q
 
+  algorithms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install numpy matplotlib pytest
+      - run: pytest -q tests/test_algorithms.py
